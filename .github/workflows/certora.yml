@@ -1,4 +1,6 @@
 name: certora
+permissions:
+    contents: read
 
 on:
     push:
