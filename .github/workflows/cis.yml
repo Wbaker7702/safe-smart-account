@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts (Hardhat)
+        run: npx hardhat compile
+
+      - name: Build TypeScript (if present)
+        run: npm run build --if-present || npx tsc --noEmit
+
+      - name: Run tests
+        run: npx hardhat test --no-compile
+
+      - name: Show codesize (non-failing)
+        run: npx hardhat codesize || true
+
+      - name: Upload hardhat artifacts (cache)
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardhat-artifacts
+          path: artifacts/
